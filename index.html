@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SENA — Solution Enablement Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          canvas: '#F4F7FF',
+          slate900: '#0B1A47',
+          accent: '#2563EB',
+          emerald: '#0EA5E9',
+        },
+        fontFamily: {
+          display: ['Sora', 'sans-serif'],
+          sans: ['Plus Jakarta Sans', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root { color-scheme: light; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F4F7FF; }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c7d6f5; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #93b4f0; }
+
+  /* Sidebar atmospheric texture — Astro blue */
+  .slate-mesh {
+    background-color: #0B1A47;
+    background-image:
+      radial-gradient(at 12% 8%, rgba(37,99,235,0.40) 0px, transparent 55%),
+      radial-gradient(at 88% 96%, rgba(14,165,233,0.28) 0px, transparent 50%),
+      linear-gradient(180deg, #0B1A47 0%, #081230 100%);
+  }
+  .grid-texture {
+    background-image:
+      linear-gradient(rgba(147,180,240,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(147,180,240,0.06) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
+  /* Entrance animations */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .rise { opacity: 0; animation: rise .6s cubic-bezier(.16,.84,.44,1) forwards; }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0.55); }
+    50%      { box-shadow: 0 0 0 6px rgba(14,165,233,0); }
+  }
+  .pulse-dot { animation: glow 2.2s ease-in-out infinite; }
+
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(8px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .pop { animation: pop .35s cubic-bezier(.16,.84,.44,1) forwards; }
+
+  .card-hover { transition: transform .35s cubic-bezier(.16,.84,.44,1), box-shadow .35s ease, border-color .35s ease; }
+  .card-hover:hover { transform: translateY(-4px); box-shadow: 0 22px 45px -22px rgba(11,26,71,0.30); }
+
+  .tab-active { background: #2563EB; color: #fff; box-shadow: 0 8px 18px -8px rgba(37,99,235,0.6); }
+
+  .feed-item { transition: background .25s ease, border-color .25s ease, transform .25s ease; }
+  .feed-item:hover { transform: translateX(4px); }
+
+  table tbody tr { transition: background .2s ease; }
+
+  .nav-link { transition: background .25s ease, color .25s ease; }
+
+  /* Document tree */
+  details.tree-node > summary::-webkit-details-marker { display: none; }
+  details.tree-node[open] > summary .tree-chevron { transform: rotate(90deg); }
+</style>
+</head>
+<body class="text-slate-700 antialiased">
+
+<div class="flex min-h-screen">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside id="sidebar" class="slate-mesh grid-texture fixed inset-y-0 left-0 z-40 w-64 -translate-x-full lg:translate-x-0 transition-transform duration-300 flex flex-col">
+    <div class="px-6 pt-7 pb-6 border-b border-white/5">
+      <div class="flex items-center gap-3">
+        <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-accent to-emerald shadow-lg shadow-blue-500/20">
+          <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h3"/></svg>
+        </div>
+        <div>
+          <p class="font-display text-[17px] font-800 leading-tight text-white tracking-tight">SENA</p>
+          <p class="text-[10px] tracking-wide text-slate-400">Solution Enablement Assistant</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-5 space-y-1">
+      <a href="#ai-hub" class="nav-link flex items-center gap-3 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-600 text-white">
+        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+        SENA Assistant
+      </a>
+      <a href="#stats" class="nav-link flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-500 text-slate-300 hover:bg-white/5 hover:text-white">
+        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg>
+        Jumlah SOP
+      </a>
+      <button id="navTree" class="nav-link flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-500 text-slate-300 hover:bg-white/5 hover:text-white">
+        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 11h4M7 7h4M15 7h2M15 11h2M11 15h6"/></svg>
+        Document Tree
+        <svg id="navTreeChevron" class="ml-auto h-3.5 w-3.5 text-slate-500 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button id="navRequest" class="nav-link flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-500 text-slate-300 hover:bg-white/5 hover:text-white">
+        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15h6"/></svg>
+        Request Document
+        <svg id="navRequestChevron" class="ml-auto h-3.5 w-3.5 text-slate-500 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <a href="#master" class="nav-link flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-500 text-slate-300 hover:bg-white/5 hover:text-white">
+        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18M3 12h18M3 19h18"/></svg>
+        Master Database
+      </a>
+    </nav>
+
+    <div class="px-3 pb-5">
+      <div class="rounded-2xl border border-white/5 bg-white/5 p-4">
+        <div class="flex items-center gap-3">
+          <div class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-emerald to-accent text-xs font-700 text-white">TA</div>
+          <div class="leading-tight">
+            <p class="text-[13px] font-600 text-white">Technical Audit</p>
+            <p class="text-[11px] text-slate-400">WH Srengseng</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- backdrop for mobile -->
+  <div id="backdrop" class="fixed inset-0 z-30 hidden bg-slate-900/40 backdrop-blur-sm lg:hidden"></div>
+
+  <!-- ============ MAIN ============ -->
+  <main class="flex-1 lg:ml-64">
+
+    <!-- Topbar -->
+    <header class="sticky top-0 z-20 border-b border-slate-200/80 bg-canvas/85 backdrop-blur-xl">
+      <div class="flex items-center justify-between gap-4 px-5 py-4 sm:px-8">
+        <div class="flex items-center gap-3">
+          <button id="menuBtn" class="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 lg:hidden">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+          <div>
+            <h1 class="font-display text-lg font-700 text-slate900 sm:text-xl" id="overview">SENA Dashboard</h1>
+            <p class="hidden text-xs text-slate-500 sm:block">Solution Enablement Assistant · Pusat konsultasi &amp; manajemen SOP</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="hidden items-center gap-2 rounded-full border border-emerald/20 bg-emerald/10 px-3.5 py-1.5 sm:flex">
+            <span class="pulse-dot h-2 w-2 rounded-full bg-emerald"></span>
+            <span class="text-xs font-600 text-emerald">System Active</span>
+          </div>
+          <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate900 font-display text-sm font-700 text-white">A</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="mx-auto flex max-w-7xl flex-col px-5 py-7 sm:px-8 sm:py-9">
+
+      <!-- ============ TOP STATS (Jumlah SOP) ============ -->
+      <section id="stats" class="order-2 mt-8">
+        <div class="mb-4 flex items-end justify-between">
+          <div>
+            <p class="text-[11px] font-700 uppercase tracking-[0.18em] text-accent">Ringkasan Metrik</p>
+            <h2 class="font-display text-base font-700 text-slate900">Jumlah SOP</h2>
+          </div>
+          <p class="hidden text-xs text-slate-400 sm:block">Per <span id="todayDate"></span></p>
+        </div>
+        <div id="statsGrid" class="grid grid-cols-2 gap-3.5 sm:gap-4 lg:grid-cols-5"></div>
+
+        <!-- Distribusi per Process Area (kolom E) -->
+        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="mb-3 flex items-center justify-between">
+            <p class="text-[11px] font-700 uppercase tracking-wider text-slate-400">Distribusi per Process Area</p>
+            <span class="text-[11px] text-slate-400">Total <b class="text-slate900" id="paTotal">0</b> SOP</span>
+          </div>
+          <div id="paBreakdown" class="flex flex-wrap gap-2"></div>
+        </div>
+      </section>
+
+      <!-- ============ SOP AI (Consultation) + FEED ============ -->
+      <section class="order-1 grid grid-cols-1 gap-5 xl:grid-cols-3">
+
+        <!-- Consultation Hub -->
+        <div id="ai-hub" class="xl:col-span-2 rise" style="animation-delay:.45s">
+          <div class="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate900 shadow-xl shadow-slate-900/10">
+            <div class="grid-texture absolute inset-0 opacity-60"></div>
+            <div class="slate-mesh absolute inset-0 opacity-90"></div>
+            <div class="relative p-6 sm:p-7">
+              <div class="flex items-center gap-3">
+                <div class="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-accent to-emerald shadow-lg shadow-blue-500/30">
+                  <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-display text-base font-700 text-white">SENA</h3>
+                  <p class="text-xs text-slate-400">Solution Enablement Assistant</p>
+                </div>
+              </div>
+
+              <!-- Chat area -->
+              <div id="chatArea" class="mt-5 max-h-72 min-h-[150px] space-y-3 overflow-y-auto pr-1">
+                <div class="pop max-w-[85%] rounded-2xl rounded-tl-md border border-white/10 bg-white/[0.06] p-4 text-sm text-slate-200">
+                  <div class="mb-2 flex items-center gap-1.5">
+                    <span class="grid h-5 w-5 place-items-center rounded-md bg-gradient-to-br from-accent to-emerald text-[9px] font-800 text-white">S</span>
+                    <span class="text-[11px] font-700 tracking-wide text-white">SENA</span>
+                  </div>
+                  Halo, SENA di sini 👋 Ada kendala operasional hari ini? Tuliskan keluhannya, nanti saya bantu langkah demi langkah. Untuk sebagian proses saya bisa tanya dulu: <b class="text-white">Hub atau Warehouse?</b>
+                </div>
+              </div>
+
+              <!-- Quick chips -->
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button class="ai-chip rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-500 text-slate-300 transition hover:border-accent hover:text-white" data-q="cara daily cycle count">Cycle Count</button>
+                <button class="ai-chip rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-500 text-slate-300 transition hover:border-accent hover:text-white" data-q="proses disposal badstock">Disposal</button>
+                <button class="ai-chip rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-500 text-slate-300 transition hover:border-accent hover:text-white" data-q="prosedur outbound picking">Outbound</button>
+                <button class="ai-chip rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-500 text-slate-300 transition hover:border-accent hover:text-white" data-q="cara replenishment stok">Replenishment</button>
+              </div>
+
+              <!-- Input -->
+              <div class="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] p-1.5 focus-within:border-accent transition">
+                <input id="aiInput" type="text" autocomplete="off"
+                  class="flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-slate-500 outline-none"
+                  placeholder="Ada kendala operasional hari ini? Tanyakan solusinya pada SENA... (Contoh: Cycle Count, Disposal, Outbound, DDN)" />
+                <button id="aiSend" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-white transition hover:bg-blue-600 active:scale-95">
+                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Newly Uploaded Feed -->
+        <div id="feed" class="rise" style="animation-delay:.55s">
+          <div class="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="pulse-dot h-2.5 w-2.5 rounded-full bg-emerald"></span>
+                <h3 class="font-display text-base font-700 text-slate900">Newly Effective</h3>
+              </div>
+              <span class="rounded-full bg-emerald/10 px-2.5 py-1 text-[10px] font-700 text-emerald">FEED</span>
+            </div>
+            <p class="mt-1 text-xs text-slate-400">SOP yang baru diresmikan / di-upload</p>
+            <div id="feedList" class="mt-4 flex-1 space-y-2.5 overflow-y-auto pr-1" style="max-height: 380px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ DOCUMENT TREE (toggle dari sidebar) ============ -->
+      <section id="tree" class="order-3 mt-8 hidden rise">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div class="flex items-center gap-2.5">
+              <div class="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-accent">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 11h4M7 7h4M15 7h2M15 11h2M11 15h6"/></svg>
+              </div>
+              <div>
+                <h2 class="font-display text-lg font-700 text-slate900">Document Tree</h2>
+                <p class="text-xs text-slate-500">Struktur dokumen SOP dikelompokkan per Category</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button id="treeExpand" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-600 text-slate-500 transition hover:bg-slate-50">Buka semua</button>
+              <button id="treeCollapse" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-600 text-slate-500 transition hover:bg-slate-50">Tutup semua</button>
+              <button id="treeClose" class="grid h-8 w-8 place-items-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200" title="Sembunyikan">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="docTree" class="grid grid-cols-1 gap-2 p-5 sm:p-6 lg:grid-cols-2"></div>
+        </div>
+      </section>
+
+      <!-- ============ REQUEST DOCUMENT ============ -->
+      <section id="request" class="order-4 mt-9 hidden rise" style="animation-delay:.62s">
+        <div class="mb-4 flex items-end justify-between">
+          <div>
+            <p class="text-[11px] font-700 uppercase tracking-[0.18em] text-accent">Pengajuan &amp; Generator</p>
+            <h2 class="font-display text-xl font-700 text-slate900">Request Document SOP</h2>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1">
+
+          <!-- Request Form -->
+          <div>
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+              <div class="flex items-center gap-3">
+                <div class="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-accent">
+                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-display text-base font-700 text-slate900">Form Pengajuan SOP Baru</h3>
+                  <p class="text-xs text-slate-500">Isi kolom di bawah, lalu generate preview format dokumen Astro</p>
+                </div>
+              </div>
+
+              <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">Process / Judul SOP <span class="text-rose-500">*</span></label>
+                  <input id="f_process" type="text" placeholder="cth: REFUND ORDER HUB" class="fin w-full rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">Sub-Process</label>
+                  <input id="f_subprocess" type="text" placeholder="cth: Proses refund pada operasional HUB" class="fin w-full rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">No. Registrasi Arsip</label>
+                  <input id="f_regno" type="text" placeholder="000/XXX/Vx/COE/XX/XX-YYYY" class="fin w-full rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 font-mono text-[12px] outline-none transition focus:border-accent" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">Versi</label>
+                  <input id="f_version" type="text" placeholder="V1.0" class="fin w-full rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">Divisi Penanggung Jawab</label>
+                  <input id="f_division" type="text" placeholder="cth: OPS Hub, Inventory Hub" class="fin w-full rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">Departemen &amp; Unit Terkait</label>
+                  <input id="f_dept" type="text" placeholder="cth: Operation Hub" class="fin w-full rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">PIC / Tim <span class="text-rose-500">*</span></label>
+                  <select id="f_pic" class="fin w-full rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent">
+                    <option value="">Pilih PIC / Tim…</option>
+                    <option value="Tim SOP Deployment">Tim SOP Deployment</option>
+                    <option value="Tim Quality / IA">Tim Quality / IA</option>
+                    <option value="Tim Operations">Tim Operations</option>
+                    <option value="Tim Fulfillment">Tim Fulfillment</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">Status <span class="text-rose-500">*</span></label>
+                  <select id="f_status" class="fin w-full rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent">
+                    <option value="Drafting">Drafting</option>
+                    <option value="On Revision">On Revision</option>
+                    <option value="On Review IA">On Review IA</option>
+                    <option value="On Review User">On Review User</option>
+                    <option value="Up to Pandadoc">Up to Pandadoc</option>
+                  </select>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">A. Latar Belakang</label>
+                  <textarea id="f_latar" rows="2" placeholder="Alasan SOP ini disusun…" class="fin w-full resize-none rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent"></textarea>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">B. Tujuan</label>
+                  <textarea id="f_tujuan" rows="2" placeholder="Tujuan utama dari SOP ini…" class="fin w-full resize-none rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent"></textarea>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="mb-1.5 block text-xs font-600 text-slate-600">F. Prosedur (1 langkah per baris — format: Aktivitas | PIC | Keterangan)</label>
+                  <textarea id="f_prosedur" rows="3" placeholder="Menyetujui permintaan refund | Customer Service | Rekap di refund tracker&#10;Memproses pengembalian dana | OPS Hub | Verifikasi invoice" class="fin w-full resize-none rounded-xl border border-slate-200 bg-canvas px-3.5 py-2.5 text-sm outline-none transition focus:border-accent"></textarea>
+                </div>
+              </div>
+
+              <div class="mt-5 flex flex-wrap items-center gap-3">
+                <button id="genPreview" class="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-600 text-white shadow-lg shadow-blue-500/25 transition hover:bg-blue-600 active:scale-95">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Generate Preview SOP
+                </button>
+                <button id="resetForm" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-600 text-slate-700 transition hover:bg-slate-50 active:scale-95">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  Reset Form
+                </button>
+                <span id="formHint" class="text-xs text-slate-400"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MASTER DATATABLE ============ -->
+      <section id="master" class="order-5 mt-9 rise" style="animation-delay:.65s">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <!-- Toolbar -->
+          <div class="flex flex-col gap-4 border-b border-slate-100 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 class="font-display text-lg font-700 text-slate900">Master Database SOP</h2>
+              <p class="text-xs text-slate-500">Daftar lengkap seluruh prosedur operasional standar</p>
+            </div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <!-- Live search -->
+              <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-canvas px-3 py-2 focus-within:border-accent transition sm:w-72">
+                <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input id="searchInput" type="text" placeholder="Cari judul, ID, atau kode SOP..." class="w-full bg-transparent text-sm text-slate-700 placeholder-slate-400 outline-none" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Unit filter tabs -->
+          <div class="flex flex-wrap gap-2 px-5 pb-4 pt-4 sm:px-6" id="tabs"></div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[920px] text-left">
+              <thead>
+                <tr class="border-y border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-wider text-slate-400">
+                  <th class="px-6 py-3 font-600">No</th>
+                  <th class="px-6 py-3 font-600">Judul SOP</th>
+                  <th class="px-6 py-3 font-600">Category</th>
+                  <th class="px-6 py-3 font-600">ID Dokumen</th>
+                  <th class="px-6 py-3 font-600">Process Area</th>
+                  <th class="px-6 py-3 font-600">Versi</th>
+                  <th class="px-6 py-3 font-600">Tanggal</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div id="emptyState" class="hidden px-6 py-14 text-center">
+            <p class="font-display text-sm font-600 text-slate-500">Tidak ada SOP yang cocok</p>
+            <p class="text-xs text-slate-400">Coba ubah kata kunci atau filter category.</p>
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-100 px-6 py-4 text-xs text-slate-400">
+            <span id="resultCount"></span>
+            <span>SENA · Solution Enablement Assistant</span>
+          </div>
+        </div>
+      </section>
+
+      <footer class="order-6 mt-8 pb-4 text-center text-xs text-slate-400">
+        <span class="font-600 text-slate-500">SENA</span> — Solution Enablement Assistant · Manajemen SOP Astro
+      </footer>
+    </div>
+  </main>
+</div>
+
+<!-- ============ SOP PREVIEW MODAL ============ -->
+<div id="sopModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="sopModalBackdrop"></div>
+  <div class="absolute inset-0 flex items-start justify-center overflow-y-auto p-4 sm:p-8">
+    <div class="pop relative w-full max-w-3xl">
+      <!-- Modal toolbar -->
+      <div class="sticky top-0 z-10 mb-3 flex items-center justify-between rounded-2xl border border-slate-700 bg-slate900 px-4 py-3 shadow-xl">
+        <div class="flex items-center gap-2.5 text-white">
+          <svg class="h-5 w-5 text-emerald" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          <span class="font-display text-sm font-700">Preview Dokumen SOP</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="printSop" class="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-600 text-slate-200 transition hover:bg-white/10">Cetak / PDF</button>
+          <button id="closeSop" class="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-white transition hover:bg-white/20">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- Document sheet -->
+      <div id="sopSheet" class="rounded-2xl bg-white p-8 shadow-2xl sm:p-10"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   LOCAL DATABASE
+============================================================ */
+/* unit = Category (kolom D), category = Process Area (kolom E) */
+const SOP_DB = [
+  {no:31, id:"",                              title:"Email Approval Manager - Disposal", unit:"Inbound", category:"Disposal", area:"Disposal", version:"", date:"", flag:true, summary:"Form/email approval manager untuk proses disposal."},
+  {no:32, id:"",                              title:"Form Disposal Hub PURI 14/05/22", unit:"Inventory Control", category:"Disposal", area:"Disposal", version:"", date:"", flag:true, summary:"Form disposal Hub PURI (dokumen perlu dilengkapi)."},
+  {no:33, id:"",                              title:"Tracker Inventory Disposal (Finance)", unit:"Inventory Control", category:"Disposal", area:"Disposal", version:"", date:"", flag:true, summary:"Tracker inventory disposal untuk tim Finance."},
+  {no:34, id:"044/SOP/V2/OPX/WH/11-2022",     title:"[SOP] REPLENISHMENT PF WAREHOUSE DRY PROCESS.pdf", unit:"Inventory Control", category:"Replenish", area:"Replenish", version:"V2.0", date:"05/11/2022", summary:"Prosedur replenishment picking face (PF) di warehouse dry."},
+  {no:35, id:"053/WI/VER(1.0)/WH/11-2022",    title:"[WI] Warehouse Replenishment Process.pdf", unit:"Inventory Control", category:"Replenish", area:"Replenish", version:"V3.0", date:"22/10/2025", summary:"Instruksi kerja proses replenishment di warehouse."},
+  {no:36, id:"067/WI/VER(1.0)/OPX/WH/01-2023",title:"[WI] GROUPING INVENTORY WH DRY.pdf", unit:"Inventory Control", category:"Replenish", area:"Replenish", version:"V1.0", date:"10/01/2023", summary:"Instruksi kerja pengelompokan inventory di WH dry."},
+  {no:37, id:"071/SOP/V1/OPX/WH/03-2023",     title:"[SOP] Stock Keeper Barang Masuk & Keluar Lokasi (SPR).pdf", unit:"Inventory Control", category:"Replenish", area:"Replenish", version:"V1.0", date:"08/03/2023", summary:"Prosedur stock keeper barang masuk & keluar lokasi (SPR)."},
+  {no:38, id:"071/WI-1/V1/COE/WH/08-24",      title:"WI STOCK MOVEMENT.pdf", unit:"Inventory Control", category:"Replenish", area:"Replenish", version:"V1.0", date:"", summary:"Instruksi kerja perpindahan stok (stock movement)."},
+  {no:39, id:"060/SOP/V1/OPX/WH/02-2023",     title:"[SOP] DAILY CYCLE COUNT.pdf", unit:"Inventory Control", category:"DCC", area:"DCC", version:"V1.0", date:"08/11/2024", summary:"Prosedur penghitungan stok harian (daily cycle count)."},
+  {no:40, id:"059/SOP/V1/OPX/WH/02-2023",     title:"[SOP] RECOUNT DAILY CYCLE COUNT.pdf", unit:"Inventory Control", category:"DCC", area:"DCC", version:"V1.0", date:"07/02/2023", summary:"Prosedur penghitungan ulang (recount) daily cycle count."},
+  {no:41, id:"061/SOP/V1/OPX/WH/02-2023",     title:"[SOP] ADJUSTMENT DCC WAREHOUSE.pdf", unit:"Inventory Control", category:"DCC", area:"DCC", version:"V1.0", date:"07/02/2023", summary:"Prosedur penyesuaian (adjustment) hasil DCC warehouse."},
+  {no:42, id:"011/SOP/V1/COE/WH/02-2024",     title:"[SOP] Universal Daily Cycle Count.pdf", unit:"Inventory Control", category:"DCC", area:"DCC", version:"V1.0", date:"12/02/2023", summary:"Prosedur universal daily cycle count lintas area."},
+  {no:43, id:"039/SOP/V2/OPX/WH/11-2022",     title:"[SOP] WH DRY BADSTOCK PROCESS.pdf", unit:"Badstock", category:"Disposal", area:"Disposal", version:"V2.0", date:"28/11/2022", summary:"Prosedur penanganan badstock di warehouse dry."},
+  {no:44, id:"042/WI-1/V2/COE/WH/03-22",      title:"[WI] DEFECT CONTROLLER DRY PRODUCTS.pdf", unit:"Badstock", category:"Disposal", area:"Disposal", version:"V2.0", date:"", summary:"Instruksi kerja defect controller untuk produk dry."},
+  {no:45, id:"043/SOP/VER(1.0)/OPX/WH/11-2022",title:"[SOP] WAREHOUSE DRY DISPOSAL PROCESS.pdf", unit:"Badstock", category:"Disposal", area:"Disposal", version:"V1.0", date:"28/11/2022", summary:"Prosedur disposal barang di warehouse dry."},
+  {no:46, id:"047/SOP/VER(1.0)/OPX/WH/12-2022",title:"[SOP] WAREHOUSE DRY DISPOSAL PROCESS BY VENDOR.pdf", unit:"Badstock", category:"Disposal", area:"Disposal", version:"V1.0", date:"08/12/2022", summary:"Prosedur disposal warehouse dry melalui vendor."},
+  {no:47, id:"052/WI/VER(1.0)/OPX/WH/11-2022",title:"[WI] BULK UPLOAD SO DISPOSAL.pdf", unit:"Badstock", category:"Disposal", area:"Disposal", version:"V1.0", date:"28/11/2022", summary:"Instruksi kerja bulk upload SO untuk disposal."},
+  {no:48, id:"016/SOP/VER(1.0)/OPX/OPS/07-2022",title:"[SOP] WAREHOUSE DRY & FRESH OUTBOUND PROCESS.pdf", unit:"Outbound", category:"Outbound", area:"Outbound", version:"V1.0", date:"10/10/2022", summary:"Prosedur outbound untuk warehouse dry & fresh."},
+  {no:49, id:"087/WI/V1/OPX/WH/11-2023",      title:"[WI] Outbound Picking Process WH Dry.pdf", unit:"Outbound", category:"Outbound", area:"Outbound", version:"V1.0", date:"", summary:"Instruksi kerja proses picking outbound WH dry."},
+  {no:50, id:"016/WI-1/V1/COE/WH/08-24",      title:"[WI] WH DRY WMS CHECKING & PACKING PROCESS.pdf", unit:"Outbound", category:"Outbound", area:"Outbound", version:"V1.0", date:"", summary:"Instruksi kerja checking & packing outbound (WMS) WH dry."},
+  {no:51, id:"088/WI/V2/OPX/WH/11-2023",      title:"[WI] Outbound Packing Warehouse Dry.pdf", unit:"Outbound", category:"Outbound", area:"Outbound", version:"V2.0", date:"", summary:"Instruksi kerja packing outbound warehouse dry."},
+  {no:52, id:"",                              title:"DDN DRY - ASTRO", unit:"Outbound", category:"DDN", area:"DDN", version:"", date:"", summary:"Dokumen DDN dry Astro (outbound)."},
+  {no:53, id:"043/WI/VER(1.0)/OPX/WH/08-22",  title:"[WI] Generate Koli ID.pdf", unit:"Outbound", category:"Outbound", area:"Outbound", version:"V1.0", date:"10/10/2022", summary:"Instruksi kerja generate Koli ID untuk outbound."},
+  {no:54, id:"010/WI.REV00-OPX/HUB/01-2022",  title:"[WI] Penggunaan Discrepency Delivery Note_DDN.pdf", unit:"Outbound", category:"DDN", area:"DDN", version:"V1.0", date:"", summary:"Instruksi kerja penggunaan Discrepancy Delivery Note (DDN)."},
+  {no:55, id:"SOP-049/1.0/XII/2022",          title:"[SOP] Verifikasi Kekurangan Kirim SO.pdf", unit:"Outbound", category:"Outbound", area:"Outbound", version:"V1.0", date:"01/01/2023", summary:"Prosedur verifikasi kekurangan kirim sales order (SO)."},
+  {no:56, id:"WI-01-SOP-049/1.0/XII/2022",    title:"[WI] Verifikasi Kekurangan Kirim SO.pdf", unit:"Outbound", category:"Outbound", area:"Outbound", version:"V1.0", date:"01/01/2023", summary:"Instruksi kerja verifikasi kekurangan kirim sales order (SO)."},
+  {no:57, id:"016/WI-5/V1/OPX/WH-MM/10-2023", title:"[WI] WH Dry Outbound Loading Process.pdf", unit:"Inbound-Outbound", category:"Outbound", area:"Outbound", version:"V1.0", date:"", summary:"Instruksi kerja proses loading outbound WH dry."},
+  {no:58, id:"008/SOP/V1/COE/WH-HUB/2-2025",  title:"[SOP] PENGEMBALIAN ASSET WAREHOUSE DRY & FRESH.pdf", unit:"Inbound-Outbound", category:"Asset", area:"Asset", version:"V1.0", date:"06/03/2025", summary:"Prosedur pengembalian aset warehouse dry & fresh."},
+  {no:59, id:"014/SOP/V1/COE/WH/02-2024",     title:"[SOP] PERPINDAHAN SO DARI RM KE QO (WAREHOUSE DRY).pdf", unit:"Outbound", category:"Asset", area:"Asset", version:"V1.0", date:"04/03/2024", summary:"Prosedur perpindahan SO dari RM ke QO di warehouse dry."},
+  {no:60, id:"091/SOP/V1/OPX-OPS/10/2023",    title:"SOP - Mishandling / Accident (Final).pdf", unit:"Others", category:"K3", area:"K3", version:"V1.0", date:"", summary:"Prosedur penanganan mishandling / kecelakaan kerja (K3)."},
+  {no:61, id:"038/WI/VER(1.0)/OPX/WH/08-22",  title:"[WI] CWH Staff Management.pdf", unit:"Others", category:"HRIS", area:"HRIS", version:"V1.0", date:"30/08/2022", summary:"Instruksi kerja manajemen staff Central Warehouse (HRIS)."},
+  {no:62, id:"022/SOP/VER(1.0)/OPX/WH/07-2022",title:"[SOP] CENTRAL WAREHOUSE CARDBOARD RETURN PROCESS.pdf", unit:"Others", category:"", area:"", version:"V1.0", date:"08/09/2022", summary:"Prosedur retur kardus dari Hub ke Central Warehouse."},
+  {no:63, id:"040/SOP/VER(1.0)/OPX/WH/11-2022",title:"[SOP] ASTRO OFFICIAL STORE.pdf", unit:"Others", category:"Fulfillment", area:"Fulfillment", version:"V1.0", date:"07/11/2022", summary:"Prosedur fulfillment Astro Official Store."},
+  {no:64, id:"023/SOP/VER(1.0)/OPX/WH/07-2022",title:"[SOP] ASTRO LOYALTY.pdf", unit:"Others", category:"Fulfillment", area:"Fulfillment", version:"V1.0", date:"21/11/2022", summary:"Prosedur program Astro Loyalty."},
+  {no:65, id:"040/SOP/VER(1.0)/OPX/WH/11-2022",title:"[SOP] INTERNAL SALES FOR DRY PRODUCT.pdf", unit:"Others", category:"Fulfillment", area:"Fulfillment", version:"V1.0", date:"07/11/2022", summary:"Prosedur internal sales untuk produk dry."},
+  {no:66, id:"049/SOP/VER(1.0)/OPX/WH/12-2022",title:"[SOP] ASTRO OFFICIAL STORE - ROCKET MART.pdf", unit:"Others", category:"Fulfillment", area:"Fulfillment", version:"V1.0", date:"19/12/2022", summary:"Prosedur Astro Official Store – Rocket Mart."},
+  {no:67, id:"057/SOP/V1/OPX/WH/02-2023",     title:"[SOP] HANDHELD ASSET MANAGEMENT WH.pdf", unit:"Others", category:"Asset", area:"Asset", version:"V1.0", date:"01/02/2023", summary:"Prosedur manajemen aset handheld di warehouse."},
+  {no:68, id:"010/SOP/V1/COE/WH/02-2024",     title:"SOP LOYALTY ORDER PROCESS AT WH DRY.pdf", unit:"Fulfillment", category:"Fulfillment", area:"Fulfillment", version:"V1.0", date:"12/02/2024", summary:"Prosedur proses order loyalty di WH dry."},
+  {no:69, id:"036/SOP/VER(1.0)/OPX/OPS/10-2022",title:"[SOP] RETURN TO WAREHOUSE PROCESS.pdf", unit:"Reverse", category:"Fulfillment", area:"Fulfillment", version:"V1.0", date:"17/10/2022", summary:"Prosedur retur barang kembali ke warehouse (reverse)."},
+  {no:70, id:"035/SOP/VER(1.0)/OPX/OPS/10-2022",title:"[SOP] RETURN TO VENDOR PROCESS.pdf", unit:"Reverse", category:"Fulfillment", area:"Fulfillment", version:"V1.0", date:"17/10/2022", summary:"Prosedur retur barang ke vendor (reverse)."},
+  {no:7,  id:"055/SOP/V1/OPX/WH/01-2023",     title:"[SOP] PENGAJUAN MAINTENANCE COLD ROOM & AC.pdf", unit:"Facility", category:"Maintenance", area:"Maintenance", version:"V1.0", date:"02/02/2023", summary:"Sistem & alur pelaporan jika terjadi kerusakan fasilitas mesin pendingin dan AC area WH Fresh & Front."},
+  {no:8,  id:"068/WI/VER(1.0)/OPX/WH/01-2023",title:"[WI] COLD & CHILLER ROOM.pdf", unit:"Facility", category:"Maintenance", area:"Maintenance", version:"V1.0", date:"01/02/2023", summary:"Ketentuan batas suhu optimal dan tata tertib memasuki ruangan chiller."},
+];
+
+/* Classification config — by Category (kolom D) */
+const UNITS = ["Inbound","Inventory Control","Badstock","Outbound","Inbound-Outbound","Reverse","Fulfillment","Facility","Others"];
+const UNIT_CFG = {
+  "Inbound":           {short:"IN",  badge:"bg-blue-50 text-accent ring-blue-200",          dot:"bg-accent",       icon:'<path d="M12 3v12"/><path d="m7 11 5 4 5-4"/><path d="M5 21h14"/>'},
+  "Inventory Control": {short:"IC",  badge:"bg-violet-50 text-violet-600 ring-violet-200",  dot:"bg-violet-500",   icon:'<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/>'},
+  "Badstock":          {short:"BS",  badge:"bg-rose-50 text-rose-600 ring-rose-200",        dot:"bg-rose-500",     icon:'<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'},
+  "Outbound":          {short:"OB",  badge:"bg-cyan-50 text-cyan-600 ring-cyan-200",        dot:"bg-cyan-500",     icon:'<path d="m21 16-9 5-9-5V8l9-5 9 5v8z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>'},
+  "Inbound-Outbound":  {short:"IO",  badge:"bg-teal-50 text-teal-600 ring-teal-200",        dot:"bg-teal-500",     icon:'<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>'},
+  "Reverse":           {short:"RV",  badge:"bg-fuchsia-50 text-fuchsia-600 ring-fuchsia-200",dot:"bg-fuchsia-500",  icon:'<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>'},
+  "Fulfillment":       {short:"FF",  badge:"bg-amber-50 text-amber-600 ring-amber-200",     dot:"bg-amber-500",    icon:'<path d="m16 16 2 2 4-4"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>'},
+  "Facility":          {short:"FC",  badge:"bg-lime-50 text-lime-600 ring-lime-200",        dot:"bg-lime-500",     icon:'<path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1M9 13h1M9 17h1"/>'},
+  "Others":            {short:"OT",  badge:"bg-slate-100 text-slate-600 ring-slate-300",    dot:"bg-slate-400",    icon:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'},
+};
+
+/* Helpers */
+const parseDate = (s) => { if (!s) return null; const p = String(s).split("/").map(Number); if (p.length < 3 || p.some(isNaN)) return null; return new Date(p[2], p[1]-1, p[0]); };
+const fmtDate = (s) => { const dt = parseDate(s); return dt ? dt.toLocaleDateString("id-ID", {day:"numeric", month:"short", year:"numeric"}) : "—"; };
+const isNew = (s) => { const dt = parseDate(s); return dt ? dt.getFullYear() >= 2024 : false; };
+const dateVal = (s) => { const dt = parseDate(s); return dt ? dt.getTime() : 0; };
+const escapeHtml = (str) => (str == null ? "" : String(str)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* Process Area badge colors (kolom E) */
+const CAT_STYLE = {
+  Disposal:    "bg-rose-50 text-rose-600 ring-rose-200",
+  Replenish:   "bg-blue-50 text-blue-600 ring-blue-200",
+  DCC:         "bg-amber-50 text-amber-600 ring-amber-200",
+  Outbound:    "bg-cyan-50 text-cyan-600 ring-cyan-200",
+  DDN:         "bg-indigo-50 text-indigo-600 ring-indigo-200",
+  Asset:       "bg-orange-50 text-orange-600 ring-orange-200",
+  K3:          "bg-red-50 text-red-600 ring-red-200",
+  HRIS:        "bg-violet-50 text-violet-600 ring-violet-200",
+  Fulfillment: "bg-emerald/10 text-emerald ring-emerald/20",
+  Maintenance: "bg-teal-50 text-teal-600 ring-teal-200",
+};
+
+/* ============================================================
+   TOP STATS CARDS
+============================================================ */
+function renderStats() {
+  const total = SOP_DB.length;
+  const cards = [{label:"Total SOP", value:total, badge:"bg-slate-100 text-slate-700", icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>'}];
+  UNITS.forEach(u => {
+    const cfg = UNIT_CFG[u] || {};
+    cards.push({label:u, value:SOP_DB.filter(s => s.unit === u).length, badge:(cfg.badge || "bg-slate-100 text-slate-600 ring-slate-200"), icon:(cfg.icon || "")});
+  });
+
+  document.getElementById("statsGrid").innerHTML = cards.map((c, i) => `
+    <div class="card-hover rise flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm" style="animation-delay:${0.04 + i*0.04}s">
+      <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ${c.badge}">
+        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${c.icon}</svg>
+      </div>
+      <div class="min-w-0">
+        <p class="font-display text-xl font-800 leading-none text-slate900" data-count="${c.value}">0</p>
+        <p class="mt-1 truncate text-[11px] font-600 text-slate-500" title="${escAttr(c.label)}">${escapeHtml(c.label)}</p>
+      </div>
+    </div>`).join("");
+
+  // Count-up animation
+  document.querySelectorAll("[data-count]").forEach(el => {
+    const target = +el.dataset.count;
+    let cur = 0;
+    const step = Math.max(1, Math.ceil(target / 18));
+    const tick = () => { cur += step; if (cur >= target) { el.textContent = target; } else { el.textContent = cur; requestAnimationFrame(tick); } };
+    setTimeout(tick, 300);
+  });
+}
+
+/* Distribusi per Process Area (kolom E dari sheet) */
+function renderProcessAreaStats() {
+  const counts = {};
+  SOP_DB.forEach(s => { const k = s.category || "Lainnya"; counts[k] = (counts[k] || 0) + 1; });
+  const entries = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+  document.getElementById("paTotal").textContent = SOP_DB.length;
+  document.getElementById("paBreakdown").innerHTML = entries.map(([area, n]) => {
+    const cs = CAT_STYLE[area] || "bg-slate-100 text-slate-600 ring-slate-200";
+    return `<span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-600 ring-1 ${cs}">${escapeHtml(area)}<span class="grid h-5 min-w-[20px] place-items-center rounded-full bg-white/70 px-1 text-[11px] font-800">${n}</span></span>`;
+  }).join("");
+}
+
+/* ============================================================
+   NEWLY UPLOADED FEED
+============================================================ */
+function renderFeed() {
+  const sorted = [...SOP_DB].sort((a,b) => dateVal(b.date) - dateVal(a.date));
+  document.getElementById("feedList").innerHTML = sorted.map(s => {
+    const fresh = isNew(s.date);
+    return `
+    <div class="feed-item group cursor-pointer rounded-2xl border ${fresh ? 'border-emerald/30 bg-emerald/[0.04]' : 'border-slate-100 bg-canvas'} p-3.5" onclick="openSopFromDB(${s.no})">
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-[13px] font-600 leading-snug text-slate900 line-clamp-2">${escapeHtml(s.title)}</p>
+        ${fresh ? '<span class="shrink-0 rounded-full bg-emerald px-2 py-0.5 text-[9px] font-700 uppercase tracking-wide text-white shadow-sm shadow-emerald/40">OFFICIALLY RELEASED</span>' : '<span class="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-600 uppercase tracking-wide text-slate-500">Arsip</span>'}
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <span class="font-mono text-[10px] text-slate-400">${s.id ? escapeHtml(s.id) : escapeHtml(s.unit + ' · ' + s.category)}</span>
+        <span class="text-[11px] font-600 text-slate-500">${fmtDate(s.date)}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   MASTER DATATABLE  (live search + tab filter)
+============================================================ */
+let activeUnit = "All";
+let searchTerm = "";
+
+/* Render unit filter tabs dynamically (All + 6 units with counts) */
+function renderUnitTabs() {
+  const tabs = document.getElementById("tabs");
+  const mk = (label, count) => {
+    const active = label === activeUnit;
+    return `<button class="tab rounded-full px-4 py-1.5 text-xs font-600 transition ${active ? 'tab-active' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}" data-unit="${escAttr(label)}">${escapeHtml(label)} <span class="opacity-60">${count}</span></button>`;
+  };
+  let html = mk("All", SOP_DB.length);
+  UNITS.forEach(u => html += mk(u, SOP_DB.filter(s => s.unit === u).length));
+  tabs.innerHTML = html;
+}
+
+function renderTable() {
+  const filtered = SOP_DB.filter(s => {
+    const unitOk = activeUnit === "All" || s.unit === activeUnit;
+    const q = searchTerm.toLowerCase();
+    const searchOk = !q ||
+      s.title.toLowerCase().includes(q) ||
+      s.id.toLowerCase().includes(q) ||
+      s.summary.toLowerCase().includes(q) ||
+      s.category.toLowerCase().includes(q) ||
+      (s.unit || "").toLowerCase().includes(q);
+    return unitOk && searchOk;
+  });
+
+  const body = document.getElementById("tableBody");
+  const empty = document.getElementById("emptyState");
+
+  if (filtered.length === 0) {
+    body.innerHTML = "";
+    empty.classList.remove("hidden");
+  } else {
+    empty.classList.add("hidden");
+    body.innerHTML = filtered.map(s => {
+      const fresh = isNew(s.date);
+      const cs = CAT_STYLE[s.category] || "bg-slate-100 text-slate-600 ring-slate-200";
+      const uc = UNIT_CFG[s.unit] || {badge:"bg-slate-100 text-slate-600 ring-slate-200", dot:"bg-slate-400"};
+      return `
+      <tr class="cursor-pointer border-b border-slate-50 hover:bg-canvas" onclick="openSopFromDB(${s.no})">
+        <td class="px-6 py-4 align-top">
+          <span class="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-xs font-700 text-slate-600">${s.no}</span>
+        </td>
+        <td class="px-6 py-4 align-top">
+          <div class="flex items-start gap-2">
+            <p class="max-w-md text-[13px] font-600 leading-snug text-slate900">${escapeHtml(s.title)}</p>
+            ${fresh ? '<span class="mt-0.5 shrink-0 rounded-full bg-emerald/10 px-1.5 py-0.5 text-[9px] font-700 text-emerald ring-1 ring-emerald/20">NEW</span>' : ''}
+            ${s.flag ? '<span class="mt-0.5 shrink-0 rounded-full bg-rose-50 px-1.5 py-0.5 text-[9px] font-700 text-rose-600 ring-1 ring-rose-200">PERLU DILENGKAPI</span>' : ''}
+          </div>
+          <p class="mt-1 max-w-md text-[11px] leading-relaxed text-slate-400 line-clamp-1">${escapeHtml(s.summary)}</p>
+        </td>
+        <td class="px-6 py-4 align-top"><span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-600 ring-1 ${uc.badge}"><span class="h-1.5 w-1.5 rounded-full ${uc.dot}"></span>${escapeHtml(s.unit)}</span></td>
+        <td class="px-6 py-4 align-top"><span class="font-mono text-[11px] text-slate-500">${s.id ? escapeHtml(s.id) : '—'}</span></td>
+        <td class="px-6 py-4 align-top">${s.category ? `<span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-600 ring-1 ${cs}">${escapeHtml(s.category)}</span>` : '<span class="text-[12px] text-slate-300">—</span>'}</td>
+        <td class="px-6 py-4 align-top"><span class="font-mono text-[12px] font-600 text-slate-600">${s.version ? escapeHtml(s.version) : '—'}</span></td>
+        <td class="px-6 py-4 align-top text-[12px] text-slate-500">${fmtDate(s.date)}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  document.getElementById("resultCount").textContent =
+    `Menampilkan ${filtered.length} dari ${SOP_DB.length} SOP`;
+}
+
+/* Tab events (unit) */
+document.getElementById("tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest(".tab");
+  if (!btn) return;
+  activeUnit = btn.dataset.unit;
+  renderUnitTabs();
+  renderTable();
+});
+
+/* Live search */
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  searchTerm = e.target.value.trim();
+  renderTable();
+});
+
+/* ============================================================
+   SOP OPERATIONS CONSULTATION  (keyword / semantic matching)
+============================================================ */
+const INTENTS = [
+  {
+    keys: ["ac","ac mati","ac rusak","ac panas","ac bocor","ac error","ac bermasalah","cold room","cold room rusak","cold room panas","ruangan panas","suhu naik","chiller","chiller rusak","pendingin","pendingin rusak","mesin pendingin","fasilitas rusak","maintenance","perbaikan fasilitas"],
+    sopNo: 7,
+    headline: "AC / Cold Room rusak.",
+    body: "Oke, kerusakan AC / cold room itu prioritas — suhu yang naik bisa merusak komoditas fresh &amp; frozen. Begini langkahnya:",
+    steps: [
+      "Amankan dulu: pindahkan produk fresh/frozen yang berisiko ke cold room/chiller yang masih normal.",
+      "Lapor segera ke SPV / Team Leader area dan tim Facility (GA / Maintenance).",
+      "Ajukan perbaikan lewat <b>form maintenance reguler</b> untuk area WH Fresh &amp; Front.",
+      "Kalau PIC atau SOP-nya belum jelas, eskalasi ke <b>Tim SOP Deployment</b> melalui kanal resmi.",
+    ],
+  },
+  {
+    keys: ["cycle count","daily cycle","dcc","opname","hitung stok","stock count","cek stok","penghitungan"],
+    sopNo: 39,
+    askCtx: true,
+    ctxNote: {
+      Hub: "Di Hub, cycle count fokus ke fast-moving SKU & picking face — biasanya harian per zona kecil, langsung lewat handheld.",
+      Warehouse: "Di Warehouse (CWH), cakupannya lebih besar (bulk + rack), dijadwal per zona/aisle, dan selisih besar wajib approval sebelum adjustment.",
+    },
+    headline: "Hitung stok / Cycle Count.",
+    body: "Untuk penghitungan stok harian, ikuti urutan ini:",
+    steps: [
+      "Jalankan penghitungan sesuai <b>DAILY CYCLE COUNT (No 39)</b>.",
+      "Kalau ada selisih, lakukan <b>RECOUNT (No 40)</b> untuk verifikasi ulang.",
+      "Bila selisih terkonfirmasi, proses <b>ADJUSTMENT DCC (No 41)</b> untuk koreksi sistem.",
+    ],
+  },
+  {
+    keys: ["disposal","buang","musnah","badstock","bad stock","defect","rusak","expired","kadaluarsa"],
+    sopNo: 45,
+    askCtx: true,
+    ctxNote: {
+      Hub: "Di Hub, badstock dikumpulkan lalu dikirim balik ke Central Warehouse — Hub tidak memusnahkan sendiri.",
+      Warehouse: "Di Warehouse, disposal diproses langsung (internal atau via vendor) sesuai No 45/46.",
+    },
+    headline: "Disposal / Badstock.",
+    body: "Untuk barang rusak/badstock yang mau di-disposal:",
+    steps: [
+      "Pisahkan &amp; data barang badstock sesuai <b>WH DRY BADSTOCK PROCESS (No 43)</b>.",
+      "Proses disposal mengikuti <b>WAREHOUSE DRY DISPOSAL PROCESS (No 45)</b>.",
+      "Disposal via vendor → <b>No 46</b>; input massal → <b>BULK UPLOAD SO DISPOSAL (No 47)</b>.",
+    ],
+  },
+  {
+    keys: ["replenish","replenishment","isi ulang","grouping","picking face","pf","penataan stok","refill"],
+    sopNo: 34,
+    askCtx: true,
+    ctxNote: {
+      Hub: "Di Hub, replenishment = isi ulang picking face dari backstock terdekat, dipicu saat stok display menipis.",
+      Warehouse: "Di Warehouse, replenishment menata stok dari area bulk/reserve ke lokasi pick sesuai grouping PF.",
+    },
+    headline: "Replenishment stok.",
+    body: "Untuk pengisian ulang stok:",
+    steps: [
+      "Isi picking face sesuai <b>REPLENISHMENT PF WAREHOUSE DRY (No 34)</b>.",
+      "Lihat <b>Warehouse Replenishment Process (No 35)</b> untuk alur umumnya.",
+    ],
+  },
+  {
+    keys: ["outbound","packing","picking","kirim","pengiriman","checking","keluar barang","wms"],
+    sopNo: 48,
+    askCtx: true,
+    ctxNote: {
+      Hub: "Di Hub, outbound = order customer last-mile: picking cepat → packing ringkas → handover ke driver.",
+      Warehouse: "Di Warehouse, outbound = pengiriman bulk/antar-node: picking → checking → packing → loading (No 48–51).",
+    },
+    headline: "Proses Outbound.",
+    body: "Untuk proses barang keluar (outbound):",
+    steps: [
+      "Acuan utama: <b>WAREHOUSE DRY &amp; FRESH OUTBOUND PROCESS (No 48)</b>.",
+      "Picking → <b>No 49</b>, Checking &amp; Packing → <b>No 50</b>, Packing → <b>No 51</b>.",
+    ],
+  },
+  {
+    keys: ["koli","koli id","generate koli","label kiriman"],
+    sopNo: 53,
+    headline: "Generate Koli ID.",
+    body: "Untuk membuat Koli ID pengiriman:",
+    steps: ["Ikuti langkah di <b>Generate Koli ID (No 53)</b>."],
+  },
+  {
+    keys: ["ddn","delivery note","discrepancy","discrepency","selisih kirim","nota selisih"],
+    sopNo: 54,
+    headline: "Discrepancy Delivery Note (DDN).",
+    body: "Untuk selisih pada delivery note:",
+    steps: [
+      "Gunakan <b>Penggunaan Discrepency Delivery Note_DDN (No 54)</b>.",
+      "Referensi tambahan: <b>DDN DRY - ASTRO (No 52)</b>.",
+    ],
+  },
+  {
+    keys: ["stock movement","perpindahan stok","pindah lokasi","spr","stock keeper","barang masuk","barang keluar","mutasi"],
+    sopNo: 37,
+    askCtx: true,
+    ctxNote: {
+      Hub: "Di Hub, perpindahan stok umumnya antar lokasi internal Hub & dicatat via SPR handheld.",
+      Warehouse: "Di Warehouse, mutasi mencakup antar-zona besar & transfer antar-node — wajib SPR + verifikasi sistem.",
+    },
+    headline: "Perpindahan Stok / SPR.",
+    body: "Untuk perpindahan / mutasi stok antar lokasi:",
+    steps: [
+      "Ikuti <b>Stock Keeper Barang Masuk &amp; Keluar Lokasi / SPR (No 37)</b>.",
+      "Detail teknis ada di <b>WI STOCK MOVEMENT (No 38)</b>.",
+    ],
+  },
+  {
+    keys: ["verifikasi kekurangan","kurang kirim","kekurangan so","selisih so","barang kurang"],
+    sopNo: 55,
+    headline: "Kekurangan Kirim SO.",
+    body: "Kalau ada kekurangan kirim sales order:",
+    steps: [
+      "Verifikasi mengikuti <b>Verifikasi Kekurangan Kirim SO (No 55)</b>.",
+      "Detail teknis di WI-nya, <b>No 56</b>.",
+    ],
+  },
+  {
+    keys: ["asset","aset","pengembalian asset","handheld","return asset","perpindahan so","rm ke qo"],
+    sopNo: 58,
+    headline: "Pengelolaan Aset.",
+    body: "Untuk urusan aset gudang:",
+    steps: [
+      "Pengembalian aset → <b>PENGEMBALIAN ASSET WH DRY &amp; FRESH (No 58)</b>.",
+      "Aset handheld → <b>HANDHELD ASSET MANAGEMENT (No 67)</b>.",
+      "Perpindahan SO RM→QO → <b>No 59</b>.",
+    ],
+  },
+  {
+    keys: ["loyalty","poin","membership","loyalitas","loyalty order"],
+    sopNo: 64,
+    headline: "Program Loyalty.",
+    body: "Untuk program loyalty:",
+    steps: [
+      "Ketentuan → <b>ASTRO LOYALTY (No 64)</b>.",
+      "Proses order → <b>LOYALTY ORDER PROCESS AT WH DRY (No 68)</b>.",
+    ],
+  },
+  {
+    keys: ["official store","rocket mart","store","toko resmi"],
+    sopNo: 63,
+    headline: "Astro Official Store.",
+    body: "Untuk fulfillment toko resmi:",
+    steps: [
+      "Acuan: <b>ASTRO OFFICIAL STORE (No 63)</b>.",
+      "Rocket Mart → <b>OFFICIAL STORE – ROCKET MART (No 66)</b>.",
+    ],
+  },
+  {
+    keys: ["internal sales","jual internal","penjualan internal","dry product"],
+    sopNo: 65,
+    headline: "Internal Sales.",
+    body: "Untuk penjualan internal produk dry:",
+    steps: ["Ikuti <b>INTERNAL SALES FOR DRY PRODUCT (No 65)</b>."],
+  },
+  {
+    keys: ["mishandling","accident","kecelakaan","k3","cedera","insiden","keselamatan"],
+    sopNo: 60,
+    headline: "Mishandling / Kecelakaan (K3).",
+    body: "Kalau terjadi mishandling atau kecelakaan kerja:",
+    steps: [
+      "Utamakan keselamatan &amp; berikan pertolongan pertama bila ada korban.",
+      "Laporkan insiden ke SPV/atasan dan tim K3 secepatnya.",
+      "Ikuti penanganan sesuai <b>SOP Mishandling / Accident (No 60)</b>.",
+    ],
+  },
+  {
+    keys: ["return","retur","reverse","kembali ke gudang","return to warehouse","return to vendor","balikin barang"],
+    sopNo: 69,
+    askCtx: true,
+    ctxNote: {
+      Hub: "Di Hub, retur customer/driver ditampung lalu dikembalikan ke Warehouse (RETURN TO WAREHOUSE, No 69).",
+      Warehouse: "Di Warehouse, retur diproses lanjut: re-stock, badstock, atau RETURN TO VENDOR (No 70).",
+    },
+    headline: "Retur / Reverse.",
+    body: "Untuk retur barang (reverse logistics):",
+    steps: [
+      "Retur ke gudang → <b>RETURN TO WAREHOUSE PROCESS (No 69)</b>.",
+      "Retur ke vendor → <b>RETURN TO VENDOR PROCESS (No 70)</b>.",
+    ],
+  },
+  {
+    keys: ["staff management","hris","kepegawaian","cwh staff","manajemen staff","karyawan gudang"],
+    sopNo: 61,
+    headline: "Staff Management (HRIS).",
+    body: "Untuk manajemen staff gudang:",
+    steps: ["Ikuti <b>CWH Staff Management (No 61)</b>."],
+  },
+  {
+    keys: ["kardus","cardboard","karton","retur kardus","limbah kardus"],
+    sopNo: 62,
+    headline: "Retur Kardus.",
+    body: "Untuk retur kardus bekas:",
+    steps: ["Kumpulkan &amp; retur dari Hub ke Central Warehouse sesuai <b>CENTRAL WAREHOUSE CARDBOARD RETURN PROCESS (No 62)</b>."],
+  },
+  {
+    keys: ["loading","muat","loading process","muat barang"],
+    sopNo: 57,
+    askCtx: true,
+    ctxNote: {
+      Hub: "Di Hub, loading = muat order ke kendaraan last-mile per rute driver.",
+      Warehouse: "Di Warehouse, loading = muat bulk/antar-node sesuai WH Dry Outbound Loading (No 57).",
+    },
+    headline: "Outbound Loading.",
+    body: "Untuk proses loading outbound:",
+    steps: ["Ikuti <b>WH Dry Outbound Loading Process (No 57)</b>."],
+  },
+];
+
+function findIntent(text) {
+  const q = " " + text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim() + " ";
+  const tokens = new Set(q.trim().split(" "));
+  let best = null, bestScore = 0;
+  for (const intent of INTENTS) {
+    let score = 0;
+    for (const k of intent.keys) {
+      const words = k.split(" ");
+      if (words.length === 1) {
+        // single token: exact word match, or prefix match for longer keys (e.g. "replenish" in "replenishment")
+        if (tokens.has(words[0])) score += words[0].length;
+        else if (words[0].length >= 4 && q.includes(" " + words[0])) score += words[0].length;
+      } else {
+        // multi-word phrase: all words present anywhere (not necessarily adjacent) = strong signal
+        if (words.every(w => tokens.has(w))) score += k.replace(/\s/g, "").length + 5;
+      }
+    }
+    if (score > bestScore) { bestScore = score; best = intent; }
+  }
+  return bestScore > 0 ? best : null;
+}
+
+function pushUser(text) {
+  const area = document.getElementById("chatArea");
+  const el = document.createElement("div");
+  el.className = "pop ml-auto max-w-[85%] rounded-2xl rounded-tr-md bg-accent p-3.5 text-sm font-500 text-white";
+  el.textContent = text;
+  area.appendChild(el);
+  area.scrollTop = area.scrollHeight;
+}
+
+function pushAI(html) {
+  const area = document.getElementById("chatArea");
+  // typing indicator
+  const typing = document.createElement("div");
+  typing.className = "pop flex max-w-[85%] gap-1.5 rounded-2xl rounded-tl-md border border-white/10 bg-white/[0.06] p-4";
+  typing.innerHTML = '<span class="h-2 w-2 animate-bounce rounded-full bg-slate-400" style="animation-delay:0s"></span><span class="h-2 w-2 animate-bounce rounded-full bg-slate-400" style="animation-delay:.15s"></span><span class="h-2 w-2 animate-bounce rounded-full bg-slate-400" style="animation-delay:.3s"></span>';
+  area.appendChild(typing);
+  area.scrollTop = area.scrollHeight;
+
+  setTimeout(() => {
+    typing.remove();
+    const el = document.createElement("div");
+    el.className = "pop max-w-[88%] rounded-2xl rounded-tl-md border border-white/10 bg-white/[0.06] p-4 text-sm text-slate-200";
+    el.innerHTML = `<div class="mb-2 flex items-center gap-1.5">
+        <span class="grid h-5 w-5 place-items-center rounded-md bg-gradient-to-br from-accent to-emerald text-[9px] font-800 text-white">S</span>
+        <span class="text-[11px] font-700 tracking-wide text-white">SENA</span>
+      </div>` + html;
+    area.appendChild(el);
+    area.scrollTop = area.scrollHeight;
+  }, 650);
+}
+
+function sopCard(sop) {
+  return `
+  <div class="mt-3 rounded-xl border border-emerald/20 bg-emerald/[0.08] p-3">
+    <div class="flex items-center justify-between">
+      <span class="font-mono text-[10px] text-emerald">${escapeHtml(sop.id)}</span>
+      <span class="rounded-full bg-emerald/20 px-2 py-0.5 text-[9px] font-700 text-emerald">${sop.category}</span>
+    </div>
+    <p class="mt-1 text-[12px] font-600 leading-snug text-white">${escapeHtml(sop.title)}</p>
+    <p class="mt-1 text-[11px] leading-relaxed text-slate-400">${escapeHtml(sop.summary)}</p>
+  </div>`;
+}
+
+function contactCard() {
+  return `
+  <div class="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3">
+    <p class="text-[11px] font-700 text-amber-300">SOP belum ada / belum yakin?</p>
+    <p class="mt-1 text-[11px] leading-relaxed text-slate-300">Dokumennya belum tersedia. Silakan hubungi penanggung jawab SOP Deployment untuk konfirmasi atau pengajuan dokumen baru:</p>
+    <div class="mt-2 flex items-center gap-2.5">
+      <span class="grid h-8 w-8 place-items-center rounded-full bg-amber-400/20 text-[11px] font-700 text-amber-200">AM</span>
+      <div class="leading-tight">
+        <p class="text-[12px] font-700 text-white">Alif Muslim <span class="font-500 text-slate-400">· SOP Deployment</span></p>
+        <a href="tel:+62812374532" class="font-mono text-[11px] text-emerald hover:underline">+62 812374532</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* Detect operational context from text: 'Hub' | 'Warehouse' | null */
+function detectCtx(text) {
+  const t = " " + text.toLowerCase() + " ";
+  if (/\b(warehouse|wh|gudang|central|cwh)\b/.test(t)) return "Warehouse";
+  if (/\bhub\b/.test(t)) return "Hub";
+  return null;
+}
+
+const CTX_CFG = {
+  Hub:       {label:"Hub",       icon:"🏬", badge:"bg-indigo-50 text-indigo-600 ring-indigo-200"},
+  Warehouse: {label:"Warehouse", icon:"🏭", badge:"bg-blue-50 text-accent ring-blue-200"},
+};
+
+/* Render the step-by-step answer for a matched intent, optionally tailored to Hub/Warehouse */
+function renderIntentAnswer(intent, ctx) {
+  const sop = SOP_DB.find(s => s.no === intent.sopNo);
+  const cc = ctx ? CTX_CFG[ctx] : null;
+  const note = (intent.ctxNote && ctx && intent.ctxNote[ctx]) ? intent.ctxNote[ctx] : "";
+  pushAI(
+    `<div class="flex items-center gap-2">
+       <p class="font-600 text-emerald">⚡ ${intent.headline}</p>
+       ${cc ? `<span class="rounded-full px-2 py-0.5 text-[10px] font-700 ring-1 ${cc.badge}">${cc.icon} ${cc.label}</span>` : ""}
+     </div>
+     <p class="mt-1.5 leading-relaxed">${intent.body}</p>
+     ${note ? `<p class="mt-1.5 rounded-lg border-l-2 border-emerald/40 bg-emerald/5 py-1.5 pl-2.5 pr-2 text-[12px] leading-relaxed text-slate-300"><b class="text-emerald">Catatan ${cc.label}:</b> ${note}</p>` : ""}
+     ${intent.steps && intent.steps.length ? `<ol class="mt-2.5 space-y-2">${intent.steps.map((st,i) => `<li class="flex gap-2.5"><span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent/15 text-[10px] font-800 text-accent">${i+1}</span><span class="leading-relaxed text-slate-300">${st}</span></li>`).join("")}</ol>` : ""}
+     ${sop ? sopCard(sop) : ""}`
+  );
+}
+
+/* Ask the Hub/Warehouse clarifying question with tappable options */
+let _pendingQuery = "";
+function askContext(text) {
+  _pendingQuery = text;
+  pushAI(
+    `<p class="leading-relaxed">Oke, biar langkahnya pas — ini untuk <b class="text-white">Hub</b> atau <b class="text-white">Warehouse (CWH)</b>?</p>
+     <div class="mt-3 flex flex-wrap gap-2">
+       <button onclick="senaPick('Hub')" class="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 py-2 text-[12px] font-700 text-white transition hover:border-accent hover:bg-accent/15">🏬 Hub</button>
+       <button onclick="senaPick('Warehouse')" class="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 py-2 text-[12px] font-700 text-white transition hover:border-accent hover:bg-accent/15">🏭 Warehouse</button>
+     </div>`
+  );
+}
+window.senaPick = function (ctx) {
+  if (!_pendingQuery) return;
+  const q = _pendingQuery; _pendingQuery = "";
+  pushUser(ctx);
+  const intent = findIntent(q);
+  if (intent) renderIntentAnswer(intent, ctx);
+};
+
+function askAI(text) {
+  if (!text || !text.trim()) return;
+  pushUser(text);
+  document.getElementById("aiInput").value = "";
+
+  const intent = findIntent(text);
+  if (intent) {
+    const ctx = detectCtx(text);
+    // If this process differs by location and user hasn't said which, ask first
+    if (intent.askCtx && !ctx) { askContext(text); return; }
+    renderIntentAnswer(intent, ctx);
+  } else {
+    // fuzzy fallback: surface closest SOPs by simple word overlap
+    const q = text.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    const ranked = SOP_DB.map(s => {
+      const hay = (s.title + " " + s.summary + " " + s.category).toLowerCase();
+      const score = q.reduce((acc, w) => acc + (hay.includes(w) ? 1 : 0), 0);
+      return {s, score};
+    }).sort((a,b) => b.score - a.score);
+
+    const top = ranked.filter(r => r.score > 0).slice(0, 2);
+    if (top.length) {
+      pushAI(
+        `<p class="font-600 text-accent">🔎 Rekomendasi SOP terdekat</p>
+         <p class="mt-1.5 leading-relaxed">Kata kunci kurang spesifik, namun berikut SOP yang paling mendekati kebutuhan Anda:</p>
+         ${top.map(r => sopCard(r.s)).join("")}
+         <p class="mt-2.5 text-[11px] text-slate-400">Belum sesuai yang Anda cari?</p>
+         ${contactCard()}`
+      );
+    } else {
+      pushAI(
+        `<p class="font-600 text-amber-300">⚠️ SOP tidak ditemukan</p>
+         <p class="mt-1.5 leading-relaxed">Maaf, saya belum menemukan SOP yang cocok dengan kendala tersebut. Coba kata kunci lain seperti <b>"cycle count"</b>, <b>"disposal"</b>, <b>"outbound"</b>, atau <b>"replenishment"</b> — atau langsung hubungi tim SOP Deployment di bawah ini.</p>
+         ${contactCard()}`
+      );
+    }
+  }
+}
+
+document.getElementById("aiSend").addEventListener("click", () => askAI(document.getElementById("aiInput").value));
+document.getElementById("aiInput").addEventListener("keydown", (e) => { if (e.key === "Enter") askAI(e.target.value); });
+document.querySelectorAll(".ai-chip").forEach(c => c.addEventListener("click", () => askAI(c.dataset.q)));
+
+/* ============================================================
+   MOBILE SIDEBAR
+============================================================ */
+const sidebar = document.getElementById("sidebar");
+const backdrop = document.getElementById("backdrop");
+document.getElementById("menuBtn").addEventListener("click", () => {
+  sidebar.classList.remove("-translate-x-full");
+  backdrop.classList.remove("hidden");
+});
+backdrop.addEventListener("click", () => {
+  sidebar.classList.add("-translate-x-full");
+  backdrop.classList.add("hidden");
+});
+document.querySelectorAll('#sidebar a').forEach(a => a.addEventListener('click', () => {
+  if (window.innerWidth < 1024) { sidebar.classList.add("-translate-x-full"); backdrop.classList.add("hidden"); }
+}));
+
+/* Document Tree toggle (hidden by default, opened from left sidebar) */
+function showTree(scroll) {
+  document.getElementById("tree").classList.remove("hidden");
+  document.getElementById("navTreeChevron").style.transform = "rotate(90deg)";
+  if (scroll) setTimeout(() => document.getElementById("tree").scrollIntoView({behavior:"smooth", block:"start"}), 60);
+}
+function hideTree() {
+  document.getElementById("tree").classList.add("hidden");
+  document.getElementById("navTreeChevron").style.transform = "";
+}
+document.getElementById("navTree").addEventListener("click", () => {
+  const isHidden = document.getElementById("tree").classList.contains("hidden");
+  isHidden ? showTree(true) : hideTree();
+  if (window.innerWidth < 1024) { sidebar.classList.add("-translate-x-full"); backdrop.classList.add("hidden"); }
+});
+document.getElementById("treeClose").addEventListener("click", hideTree);
+
+/* Request Document toggle (hidden by default, opened from left sidebar) */
+function toggleSection(secId, chevronId) {
+  const sec = document.getElementById(secId);
+  const isHidden = sec.classList.contains("hidden");
+  if (isHidden) {
+    sec.classList.remove("hidden");
+    if (chevronId) document.getElementById(chevronId).style.transform = "rotate(90deg)";
+    setTimeout(() => sec.scrollIntoView({behavior:"smooth", block:"start"}), 60);
+  } else {
+    sec.classList.add("hidden");
+    if (chevronId) document.getElementById(chevronId).style.transform = "";
+  }
+  if (window.innerWidth < 1024) { sidebar.classList.add("-translate-x-full"); backdrop.classList.add("hidden"); }
+}
+document.getElementById("navRequest").addEventListener("click", () => toggleSection("request", "navRequestChevron"));
+
+/* ============================================================
+   SOP REQUEST CENTER  (form, tracker, document generator)
+============================================================ */
+
+/* Status visual config */
+const STATUS_CFG = {
+  "Drafting":       {badge:"bg-slate-100 text-slate-600 ring-slate-200",  dot:"bg-slate-400",   step:1},
+  "On Revision":    {badge:"bg-amber-50 text-amber-600 ring-amber-200",   dot:"bg-amber-400",   step:2},
+  "On Review IA":   {badge:"bg-blue-50 text-accent ring-blue-200",        dot:"bg-accent",      step:3},
+  "On Review User": {badge:"bg-indigo-50 text-indigo-600 ring-indigo-200",dot:"bg-indigo-500",  step:4},
+  "Up to Pandadoc": {badge:"bg-emerald/10 text-emerald ring-emerald/20",  dot:"bg-emerald",     step:5},
+};
+const PIC_LIST = ["Tim SOP Deployment","Tim Quality / IA","Tim Operations","Tim Fulfillment"];
+
+const escAttr = (s) => (s || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Normalize a published SOP (real data) into doc shape ---------- */
+function sopFromDB(s) {
+  const cat = s.category || s.unit;
+  return {
+    process: s.title,
+    subProcess: s.summary,
+    regNo: s.id,
+    version: s.version,
+    division: s.unit,
+    dept: cat + (s.area && s.area !== cat ? " · " + s.area : ""),
+    pic: "—",
+    status: "Up to Pandadoc",
+    date: s.date,
+    latar: "SOP ini telah diresmikan dan berlaku sebagai standar operasional. " + s.summary,
+    tujuan: s.summary,
+    prosedur: [{act:"Prosedur lengkap tersedia pada dokumen final resmi.", pic: s.unit, ket:"Rujuk dokumen resmi"}],
+  };
+}
+function openSopFromDB(no) {
+  const s = SOP_DB.find(x => x.no === no);
+  if (s) openSopPreview(sopFromDB(s));
+}
+
+/* ---------- Document Tree (grouped by Unit, real data) ---------- */
+function renderDocTree() {
+  const tree = document.getElementById("docTree");
+  let html = "";
+  UNITS.forEach((u, idx) => {
+    const docs = SOP_DB.filter(s => s.unit === u).sort((a,b) => dateVal(b.date) - dateVal(a.date));
+    if (!docs.length) return;
+    const uc = UNIT_CFG[u] || {badge:"bg-slate-100 text-slate-600 ring-slate-200", dot:"bg-slate-400", icon:''};
+    const leaves = docs.map(s => {
+      const fresh = isNew(s.date);
+      return `
+      <button onclick="openSopFromDB(${s.no})" class="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition hover:bg-white">
+        <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${uc.dot}"></span>
+        <span class="min-w-0 flex-1">
+          <span class="flex items-center gap-1.5">
+            <span class="truncate text-[12px] font-600 text-slate-700">${escapeHtml(s.title)}</span>
+            ${fresh ? '<span class="shrink-0 rounded bg-emerald/10 px-1 py-0.5 text-[8px] font-700 text-emerald">NEW</span>' : ''}
+          </span>
+          <span class="block font-mono text-[10px] text-slate-400">${escapeHtml(s.id)} · ${escapeHtml(s.version)}</span>
+        </span>
+        <svg class="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+      </button>`;
+    }).join("");
+    html += `
+    <details class="tree-node rounded-xl border border-slate-100 bg-canvas/60" ${idx === 0 ? "open" : ""}>
+      <summary class="flex cursor-pointer list-none items-center gap-2.5 rounded-xl px-3 py-2.5 hover:bg-slate-50">
+        <svg class="tree-chevron h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg ring-1 ${uc.badge}">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${uc.icon}</svg>
+        </span>
+        <span class="flex-1 text-[13px] font-700 text-slate900">${escapeHtml(u)}</span>
+        <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-700 text-slate-500 ring-1 ring-slate-200">${docs.length}</span>
+      </summary>
+      <div class="space-y-0.5 border-t border-slate-100 px-2 py-1.5">${leaves}</div>
+    </details>`;
+  });
+  tree.innerHTML = html;
+}
+document.getElementById("treeExpand").addEventListener("click", () => document.querySelectorAll("#docTree details").forEach(d => d.open = true));
+document.getElementById("treeCollapse").addEventListener("click", () => document.querySelectorAll("#docTree details").forEach(d => d.open = false));
+
+/* ---------- Document generator ---------- */
+function buildSopHtml(r) {
+  const statusBadge = (r.status === "Up to Pandadoc")
+    ? '<span class="rounded bg-emerald/10 px-2 py-0.5 text-[11px] font-700 text-emerald">Final · Up to Pandadoc</span>'
+    : `<span class="rounded bg-amber-50 px-2 py-0.5 text-[11px] font-700 text-amber-600">Draft · ${escapeHtml(r.status)}</span>`;
+
+  const procRows = (r.prosedur && r.prosedur.length ? r.prosedur : [{act:"—", pic:"—", ket:"—"}])
+    .map((p, i) => `
+      <tr class="border-b border-slate-200 align-top">
+        <td class="px-3 py-2 text-center font-600">${i+1}.</td>
+        <td class="px-3 py-2">${escapeHtml(p.act)}</td>
+        <td class="px-3 py-2 font-600">${escapeHtml(p.pic)}</td>
+        <td class="px-3 py-2 text-slate-500">${escapeHtml(p.ket)}</td>
+      </tr>`).join("");
+
+  const today = new Date().toLocaleDateString("id-ID", {day:"2-digit", month:"2-digit", year:"numeric"});
+
+  return `
+  <div class="font-sans text-[13px] leading-relaxed text-slate-700">
+    <!-- Company header -->
+    <div class="flex items-start justify-between border-b-2 border-slate900 pb-3">
+      <div>
+        <p class="font-display text-sm font-800 text-slate900">PT Astro Technologies Indonesia</p>
+        <p class="text-[10px] text-slate-500">Graha Antero 5th–6th floor, Jl. Tomang Raya no. 27, Jakarta Barat 11440</p>
+        <p class="text-[10px] text-slate-500">Ph. +6221 58909787 · info@astronauts.id</p>
+      </div>
+      <div class="grid h-11 w-11 place-items-center rounded-xl bg-slate900 font-display text-lg font-800 text-white">A</div>
+    </div>
+
+    <h1 class="mt-4 text-center font-display text-base font-800 tracking-wide text-slate900">STANDARD OPERATING PROCEDURE</h1>
+
+    <!-- Metadata table -->
+    <table class="mt-3 w-full border-collapse text-[12px]">
+      <tbody>
+        <tr class="border border-slate-300">
+          <td class="w-1/4 border border-slate-300 bg-slate-50 px-3 py-2 font-700">PROCESS</td>
+          <td class="border border-slate-300 px-3 py-2 font-700 text-slate900" colspan="3">${escapeHtml(r.process) || "—"}</td>
+        </tr>
+        <tr class="border border-slate-300">
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-700">SUB-PROCESS</td>
+          <td class="border border-slate-300 px-3 py-2" colspan="3">${escapeHtml(r.subProcess) || "—"}</td>
+        </tr>
+        <tr>
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-600">No. Registrasi Arsip</td>
+          <td class="border border-slate-300 px-3 py-2 font-mono text-[11px]">${escapeHtml(r.regNo) || "—"}</td>
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-600">Versi Ke.</td>
+          <td class="border border-slate-300 px-3 py-2">${escapeHtml(r.version) || "—"}</td>
+        </tr>
+        <tr>
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-600">Divisi Penanggung Jawab</td>
+          <td class="border border-slate-300 px-3 py-2">${escapeHtml(r.division) || "—"}</td>
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-600">Tanggal Berlaku</td>
+          <td class="border border-slate-300 px-3 py-2">${escapeHtml(r.date) || today}</td>
+        </tr>
+        <tr>
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-600">Departemen &amp; Unit Terkait</td>
+          <td class="border border-slate-300 px-3 py-2">${escapeHtml(r.dept) || "—"}</td>
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-600">Status</td>
+          <td class="border border-slate-300 px-3 py-2">${statusBadge}</td>
+        </tr>
+        <tr>
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-600">PIC Dokumen</td>
+          <td class="border border-slate-300 px-3 py-2 font-700">${escapeHtml(r.pic) || "—"}</td>
+          <td class="border border-slate-300 bg-slate-50 px-3 py-2 font-600">Tanggal Pengesahan</td>
+          <td class="border border-slate-300 px-3 py-2">${escapeHtml(r.date) || today}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pengesahan -->
+    <table class="mt-3 w-full border-collapse text-[11px]">
+      <tbody>
+        <tr><td class="border border-slate-300 bg-slate-900 px-3 py-1.5 text-center font-700 text-white">PENGESAHAN DOKUMEN</td></tr>
+        <tr><td class="border border-slate-300 px-3 py-2"><b>Disusun Oleh:</b> ${escapeHtml(r.pic)} · HUB SOP Associate · Hub Excellence Jr Manager</td></tr>
+        <tr><td class="border border-slate-300 px-3 py-2"><b>Diketahui Oleh:</b> Head of Customer &amp; Operation Experience · Lead Technical Audit · Lead SOP Management &amp; Compliance</td></tr>
+        <tr><td class="border border-slate-300 px-3 py-2"><b>Disetujui Oleh:</b> Head of Operations · Senior Manager Operation Hub</td></tr>
+      </tbody>
+    </table>
+
+    <!-- A. Latar Belakang -->
+    <h2 class="mt-5 font-display text-[13px] font-800 text-slate900">A. LATAR BELAKANG</h2>
+    <p class="mt-1 text-justify">${escapeHtml(r.latar) || "[Belum diisi — jelaskan kondisi existing, risiko, dan kebutuhan SOP ini.]"}</p>
+
+    <!-- B. Tujuan -->
+    <h2 class="mt-4 font-display text-[13px] font-800 text-slate900">B. TUJUAN</h2>
+    <p class="mt-1 text-justify">${escapeHtml(r.tujuan) || "[Belum diisi — tuliskan tujuan utama SOP.]"}</p>
+
+    <!-- C. Ruang Lingkup -->
+    <h2 class="mt-4 font-display text-[13px] font-800 text-slate900">C. RUANG LINGKUP</h2>
+    <ul class="mt-1 list-disc space-y-0.5 pl-5">
+      <li>Definisi kegiatan, prosedur, penanggung jawab, dan dokumen yang dibutuhkan dalam proses ${escapeHtml(r.process) || "ini"}.</li>
+      <li>Prosedur ini berlaku untuk kegiatan operasional ${escapeHtml(r.dept) || "HUB"}.</li>
+    </ul>
+
+    <!-- D. Definisi -->
+    <h2 class="mt-4 font-display text-[13px] font-800 text-slate900">D. DEFINISI &amp; SINGKATAN</h2>
+    <ul class="mt-1 list-disc space-y-0.5 pl-5">
+      <li><i>Inbound</i>: Proses penerimaan barang yang datang dari Warehouse ke Hub.</li>
+      <li><i>Staging Area</i>: Lokasi penyimpanan barang sementara sebelum proses selanjutnya.</li>
+    </ul>
+
+    <!-- E. Alur Kerja -->
+    <h2 class="mt-4 font-display text-[13px] font-800 text-slate900">E. ALUR KERJA</h2>
+    <p class="mt-1 text-slate-500">Flowchart Standar — <i>detail flow dilampirkan terpisah pada dokumen final.</i></p>
+
+    <!-- F. Prosedur -->
+    <h2 class="mt-4 font-display text-[13px] font-800 text-slate900">F. PROSEDUR</h2>
+    <table class="mt-1 w-full border-collapse text-[11.5px]">
+      <thead>
+        <tr class="bg-slate-100 text-slate-600">
+          <th class="border border-slate-300 px-3 py-1.5 text-center">No</th>
+          <th class="border border-slate-300 px-3 py-1.5 text-left">Aktivitas</th>
+          <th class="border border-slate-300 px-3 py-1.5 text-left">PIC</th>
+          <th class="border border-slate-300 px-3 py-1.5 text-left">Keterangan</th>
+        </tr>
+      </thead>
+      <tbody>${procRows}</tbody>
+    </table>
+
+    <!-- H. RACI -->
+    <h2 class="mt-4 font-display text-[13px] font-800 text-slate900">H. RACI</h2>
+    <table class="mt-1 w-full border-collapse text-[11.5px]">
+      <thead>
+        <tr class="bg-slate-100 text-slate-600">
+          <th class="border border-slate-300 px-3 py-1.5">Activity</th>
+          <th class="border border-slate-300 px-3 py-1.5">R</th>
+          <th class="border border-slate-300 px-3 py-1.5">A</th>
+          <th class="border border-slate-300 px-3 py-1.5">C</th>
+          <th class="border border-slate-300 px-3 py-1.5">I</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="text-center">
+          <td class="border border-slate-300 px-3 py-1.5 text-left">${escapeHtml(r.process)}</td>
+          <td class="border border-slate-300 px-3 py-1.5 font-600">${escapeHtml(r.pic)}</td>
+          <td class="border border-slate-300 px-3 py-1.5 font-600">SPV Hub</td>
+          <td class="border border-slate-300 px-3 py-1.5">QA Fresh</td>
+          <td class="border border-slate-300 px-3 py-1.5">Manager</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- I. Penutup -->
+    <h2 class="mt-4 font-display text-[13px] font-800 text-slate900">I. PENUTUP</h2>
+    <p class="mt-1 text-justify">Prosedur ini berlaku sejak tanggal berlaku. Hal-hal yang belum diatur akan ditetapkan kemudian sesuai ketentuan umum SOP dan persetujuan manajemen.</p>
+
+    <!-- K. Revision History -->
+    <h2 class="mt-4 font-display text-[13px] font-800 text-slate900">K. REVISION HISTORY</h2>
+    <p class="mt-1 text-[11px] text-slate-500">Versi Saat Ini: ${escapeHtml(r.regNo)} (${escapeHtml(r.version)}) · Pemohon: ${escapeHtml(r.pic)}</p>
+
+    <p class="mt-6 border-t border-slate-200 pt-3 text-center text-[9px] italic text-slate-400">This document is the property of PT Astro Technologies Indonesia and is prohibited to be duplicated, copied, or distributed without prior permission.</p>
+  </div>`;
+}
+
+function openSopPreview(r) {
+  if (!r) return;
+  document.getElementById("sopSheet").innerHTML = buildSopHtml(r);
+  const m = document.getElementById("sopModal");
+  m.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+function closeSopPreview() {
+  document.getElementById("sopModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+document.getElementById("closeSop").addEventListener("click", closeSopPreview);
+document.getElementById("sopModalBackdrop").addEventListener("click", closeSopPreview);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSopPreview(); });
+document.getElementById("printSop").addEventListener("click", () => {
+  const w = window.open("", "_blank");
+  w.document.write(`<html><head><title>SENA — SOP Astro</title><script src="https://cdn.tailwindcss.com"><\/script></head><body class="p-8">${document.getElementById("sopSheet").innerHTML}</body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 600);
+});
+
+/* ---------- Form: collect, generate, add ---------- */
+function collectForm() {
+  const lines = (document.getElementById("f_prosedur").value || "").split("\n").map(l => l.trim()).filter(Boolean);
+  const prosedur = lines.map(l => {
+    const [act, pic, ket] = l.split("|").map(s => (s || "").trim());
+    return {act: act || "—", pic: pic || "—", ket: ket || "—"};
+  });
+  return {
+    process: document.getElementById("f_process").value.trim(),
+    subProcess: document.getElementById("f_subprocess").value.trim(),
+    regNo: document.getElementById("f_regno").value.trim(),
+    version: document.getElementById("f_version").value.trim(),
+    division: document.getElementById("f_division").value.trim(),
+    dept: document.getElementById("f_dept").value.trim(),
+    pic: document.getElementById("f_pic").value,
+    status: document.getElementById("f_status").value,
+    latar: document.getElementById("f_latar").value.trim(),
+    tujuan: document.getElementById("f_tujuan").value.trim(),
+    date: new Date().toLocaleDateString("id-ID", {day:"2-digit", month:"2-digit", year:"numeric"}),
+    prosedur,
+  };
+}
+function flashHint(msg, ok) {
+  const h = document.getElementById("formHint");
+  h.textContent = msg;
+  h.className = "text-xs font-600 " + (ok ? "text-emerald" : "text-rose-500");
+  setTimeout(() => { h.textContent = ""; }, 3500);
+}
+document.getElementById("genPreview").addEventListener("click", () => {
+  const r = collectForm();
+  if (!r.process || !r.pic) { flashHint("Judul SOP & PIC wajib diisi dulu ya.", false); return; }
+  openSopPreview(r);
+});
+document.getElementById("resetForm").addEventListener("click", () => {
+  ["f_process","f_subprocess","f_regno","f_version","f_division","f_dept","f_latar","f_tujuan","f_prosedur"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("f_pic").value = "";
+  document.getElementById("f_status").value = "Drafting";
+  flashHint("Form direset.", true);
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+document.getElementById("todayDate").textContent =
+  new Date().toLocaleDateString("id-ID", {day:"numeric", month:"long", year:"numeric"});
+renderStats();
+renderProcessAreaStats();
+renderFeed();
+renderUnitTabs();
+renderDocTree();
+renderTable();
+
+/* Safety net: if the table is somehow empty after full load, render again */
+window.addEventListener("load", () => {
+  const tb = document.getElementById("tableBody");
+  const empty = document.getElementById("emptyState");
+  if (tb && tb.children.length === 0 && empty && empty.classList.contains("hidden")) {
+    try { renderStats(); renderProcessAreaStats(); renderFeed(); renderUnitTabs(); renderDocTree(); renderTable(); }
+    catch (e) { console.error("SENA render error:", e); }
+  }
+});
+</script>
+
+</body>
+</html>
